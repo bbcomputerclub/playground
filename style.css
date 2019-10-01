@@ -61,7 +61,6 @@ header {
 }
 #iframe {
 	border: 0;
-	resize: horizontal;
 }
 
 .CodeMirror {
