@@ -62,10 +62,8 @@ header {
 	flex-grow: 1;
 }
 
-#result {
-	min-width: 500px;
-}
 #iframe {
+	min-width: 500px;
 	border: 0;
 }
 
