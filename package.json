@@ -1,0 +1,29 @@
+{
+  "name": "html-playground",
+  "version": "0.0.1",
+  "description": "HTML Playground",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bbcomputerclub/playground.git"
+  },
+  "keywords": [
+    "HTML",
+    "playground"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bbcomputerclub/playground/issues"
+  },
+  "homepage": "https://github.com/bbcomputerclub/playground#readme",
+  "dependencies": {
+    "@types/node": "^12.7.8",
+    "express": "^4.17.1"
+  }
+}

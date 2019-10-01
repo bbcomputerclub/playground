@@ -1,0 +1,70 @@
+/* https://solvit.io/2454237 */
+
+body, button, input {
+	font-size: 14px;
+	font-family: 'Roboto', sans-serif;
+}
+body {
+	padding: 0; margin: 0;
+}
+
+.button {
+	background: #60A917;
+
+	padding: 8px 16px;
+	border: 0;
+	color: #fff;
+	cursor: pointer; }
+.button:active {
+	background: #128023; }
+.button.accent {
+	background: #F0A30A; }
+.button.accent:active {
+	background: #CC8A08 }
+
+main {
+	display: flex;
+	height: 100vh;
+	align-items: stretch; }
+#code {
+	flex-grow: 1;
+	display: flex;
+	flex-direction: column; }
+ 
+header {
+	display: flex;
+
+	background: #555;
+	color: #fff; }
+.spacer {
+	flex-grow: 1; }
+.tab {
+	padding: 8px 16px;
+	color: #fff;
+	border: 0;
+	border-bottom: 2px solid transparent;
+	background: transparent; }
+.tab.selected {
+	border-bottom: 2px solid #111; }
+#newfile {
+	background: #555; }
+#newfile:active {
+	background: #444; }
+.CodeMirror {
+	flex-grow: 1;
+}
+
+#result {
+	min-width: 500px;
+}
+#iframe {
+	border: 0;
+	resize: horizontal;
+}
+
+.CodeMirror {
+	background: #eee;
+}
+.CodeMirror-gutters {
+	background: #ddd;
+}

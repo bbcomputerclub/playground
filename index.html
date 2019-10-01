@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>HTML Playground</title>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.48.4/codemirror.min.css">
+		<link rel="stylesheet" href="/style.css">
+	</head>
+	<body>
+		<main>
+			<div id="code">
+				<header>
+					<div id="tabs"></div>
+					<button id="newfile" class="button">+</button>
+					<div class="spacer"></div>
+					<button id="run" class="accent button">Show</button>
+				</header>
+				<textarea id="textarea"></textarea>
+			</div>
+			<div id="result">
+				<iframe id="iframe"></iframe>
+			</div>
+		</main>
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.48.4/codemirror.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.48.4/mode/xml/xml.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.48.4/mode/css/css.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.48.4/mode/javascript/javascript.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.48.4/mode/htmlmixed/htmlmixed.js"></script>
+		<script>
+			var defaultFile = "<!DOCTYPE html>\n<html>\n\t<head>\n\t\t<title><!-- title here --></title>\n\t</head>\n\t<body>\n\t\t<!-- body here -->\n\t</body>\n</html>";
+
+			var cm = CodeMirror.fromTextArea(document.getElementById("textarea"), {
+				lineNumbers: true,
+				mode: "htmlmixed",
+				htmlMode: true,
+				indentWithTabs: true
+			});
+
+			var currentFile = "";
+
+			function loadFile(filename) {
+				if (filename == currentFile) {
+					return;
+				}
+
+				// Save currently open file & remove the selected attribute
+				if (currentFile) {
+					var tabElem = document.querySelector("[data-file='" + currentFile + "']");
+					if (tabElem != null) {
+						tabElem.classList.remove("selected");
+					}
+					saveFile(currentFile, cm.getValue());
+				}
+
+				currentFile = filename;
+				var xhr = new XMLHttpRequest();
+				xhr.addEventListener("load", function() {
+					if (filename.endsWith(".html")) {
+						cm.setOption("mode", "htmlmixed");
+					} else if (filename.endsWith(".css")) {
+						cm.setOption("mode", "css");
+					} else if (filename.endsWith(".js")) {
+						cm.setOption("mode", "javascript");
+					}
+					cm.setValue(xhr.responseText);
+
+					// Set tab as selected
+					var tabElem = document.querySelector("[data-file='" + filename + "']");
+					if (tabElem != null) {
+						tabElem.classList.add("selected");
+					}
+				});
+				xhr.open("GET", "/files/" + location.hash.slice(1) + "/" + filename);
+
+				// Prevent 304 from happening
+				xhr.setRequestHeader("If-Modified-Since", "");
+				xhr.setRequestHeader("If-None-Match", (Math.random() * Number.MAX_SAFE_INTEGER).toString(36));
+
+				xhr.send();
+			}
+
+			function createTab(file) {
+				var tab = document.createElement("button");
+				tab.classList.add("tab");
+				tab.setAttribute("data-file", file);
+				tab.innerText = file;
+				tab.addEventListener("click", function() {
+					loadFile(this.getAttribute("data-file"));
+				});
+				return tab;
+			}
+
+			// Loads files from project and updates #tabs
+			function loadFiles() {
+				var xhr = new XMLHttpRequest();
+				xhr.addEventListener("load", function(resolve, reject) {
+					var json = JSON.parse(xhr.responseText);
+					new Promise(function(resolve, reject) {
+						if (json.files.indexOf("index.html") == -1) {
+							json.files.push("index.html");
+							saveFile("index.html", defaultFile).then(resolve, resolve);
+						}
+						resolve();
+					}).then(function() {
+						var tabsElem = document.getElementById("tabs");
+						tabsElem.innerHTML = "";
+
+						for (var file of json.files) {
+							tabsElem.appendChild(createTab(file)); 
+						}
+						loadFile("index.html");
+					});
+				});
+				xhr.open("GET", "/project/" + location.hash.slice(1));
+				xhr.send();
+			}
+
+			// Adds and truncates a file
+			function addFile(filename) {
+				var tabsElem = document.getElementById("tabs");
+				tabsElem.appendChild(createTab(filename)); 
+				saveFile(filename, "");
+			}
+
+			window.addEventListener("hashchange", function() {
+				loadFiles();
+			});
+
+			if (location.hash.length <= 1) {
+				let xhr = new XMLHttpRequest();
+				xhr.addEventListener("load", function() {
+					location.hash = xhr.responseText;
+				});
+				xhr.open("POST", "/new");
+				xhr.send();
+			} else {
+				loadFiles();
+			}
+
+			function saveFile(filename, data) {
+				return new Promise(function(resolve, reject) {
+					let xhr = new XMLHttpRequest();
+					xhr.addEventListener("load", function() {
+						resolve();
+					});
+					xhr.addEventListener("error", function() {
+						reject();
+					});
+					xhr.open("POST", "/files/" + location.hash.slice(1) + "/" + filename);
+					xhr.send(data);
+				});
+			}
+
+			document.getElementById("run").addEventListener("click", function() {
+				saveFile(currentFile, cm.getValue()).then(function() {
+					document.getElementById("iframe").src = "/files/" + location.hash.slice(1) + "/" + "index.html";
+				});
+			});
+
+			document.getElementById("newfile").addEventListener("click", function() {
+				var filename = window.prompt("What's its filename?");
+				if (!filename) {
+					return;
+				}
+
+				addFile(filename);
+			});
+
+			window.addEventListener("beforeunload", function() {
+				navigator.sendBeacon("/files/" + location.hash.slice(1) + "/" + currentFile, cm.getValue());
+			});
+		</script>
+	</body>
+</html>
