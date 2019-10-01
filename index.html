@@ -11,8 +11,11 @@
 				<header>
 					<div id="tabs"></div>
 					<button id="newfile" class="button">+</button>
+
 					<div class="spacer"></div>
-					<button id="run" class="accent button">Show</button>
+
+					<a class="button" id="download">Download</a>
+					<button id="run" class="accent button">Run</button>
 				</header>
 				<textarea id="textarea"></textarea>
 			</div>
@@ -90,11 +93,16 @@
 				return tab;
 			}
 
-			// Loads files from project and updates #tabs
+			// Loads files from project, updates download button, and updates #tabs
 			function loadFiles() {
+				document.getElementById("download").href = "/download/" + location.hash.slice(1);
+
 				var xhr = new XMLHttpRequest();
-				xhr.addEventListener("load", function(resolve, reject) {
+				xhr.addEventListener("load", function() {
 					var json = JSON.parse(xhr.responseText);
+					if(json.error) {
+						console.error(json.error);
+					}
 					new Promise(function(resolve, reject) {
 						if (json.files.indexOf("index.html") == -1) {
 							json.files.push("index.html");
