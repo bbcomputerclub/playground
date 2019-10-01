@@ -3,7 +3,6 @@
 body, button, input {
 	font-size: 14px;
 	font-family: 'Roboto', sans-serif;
-	outline: none;
 }
 body {
 	padding: 0; margin: 0;
@@ -13,10 +12,16 @@ body {
 	border: 0;
 }
 
+button, .button {
+	outline: none;
+	margin: 0;
+}
+
+a.button {
+	line-height: 22px; }
 .button {
 	background: #60A917;
 	display: inline-block;
-	outline: 0;
 
 	padding: 8px 16px;
 	border: 0;
@@ -53,7 +58,7 @@ header {
 	border-bottom: 2px solid transparent;
 	background: transparent; }
 .tab.selected {
-	border-bottom: 2px solid #999; }
+	border-bottom: 4px solid #999; }
 #newfile {
 	background: #555; }
 #newfile:active {
