@@ -56,9 +56,20 @@ header {
 	color: #fff;
 	border: 0;
 	border-bottom: 2px solid transparent;
-	background: transparent; }
+	background: transparent;
+	display: inline-block; }
 .tab.selected {
 	border-bottom: 4px solid #999; }
+.tab-close {
+	border: 0;
+	color: #fff;
+	border-radius: 2px;
+	margin-left: 4px;
+	margin-right: -8px;
+	background: transparent;
+	padding: 0 8px; }
+.tab-close:active {
+	background: #444; }
 #newfile {
 	background: #555; }
 #newfile:active {

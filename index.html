@@ -46,50 +46,88 @@
 					return;
 				}
 
-				// Save currently open file & remove the selected attribute
 				if (currentFile) {
-					var tabElem = document.querySelector("[data-file='" + currentFile + "']");
-					if (tabElem != null) {
-						tabElem.classList.remove("selected");
-					}
 					saveFile(currentFile, cm.getValue());
 				}
 
 				currentFile = filename;
-				var xhr = new XMLHttpRequest();
-				xhr.addEventListener("load", function() {
-					if (filename.endsWith(".html")) {
-						cm.setOption("mode", "htmlmixed");
-					} else if (filename.endsWith(".css")) {
-						cm.setOption("mode", "css");
-					} else if (filename.endsWith(".js")) {
-						cm.setOption("mode", "javascript");
-					}
-					cm.setValue(xhr.responseText);
+				return new Promise(function(resolve) {
+					var xhr = new XMLHttpRequest();
+					xhr.addEventListener("load", function() {
+						if (filename.endsWith(".html")) {
+							cm.setOption("mode", "htmlmixed");
+						} else if (filename.endsWith(".css")) {
+							cm.setOption("mode", "css");
+						} else if (filename.endsWith(".js")) {
+							cm.setOption("mode", "javascript");
+						}
+						cm.setValue(xhr.responseText);
 
-					// Set tab as selected
-					var tabElem = document.querySelector("[data-file='" + filename + "']");
-					if (tabElem != null) {
-						tabElem.classList.add("selected");
-					}
+						var tabOldElem = document.querySelector(".tab.selected");
+						if (tabOldElem != null) {
+							tabOldElem.classList.remove("selected");
+						}
+
+						// Set tab as selected
+						var tabElem = document.querySelector("[data-file='" + filename + "']");
+						if (tabElem != null) {
+							tabElem.classList.add("selected");
+						}
+
+						resolve();
+					});
+					xhr.open("GET", "/files/" + location.hash.slice(1) + "/" + filename);
+
+					// Prevent 304 from happening
+					xhr.setRequestHeader("If-Modified-Since", "");
+					xhr.setRequestHeader("If-None-Match", (Math.random() * Number.MAX_SAFE_INTEGER).toString(36));
+
+					xhr.send();
 				});
-				xhr.open("GET", "/files/" + location.hash.slice(1) + "/" + filename);
+			}
 
-				// Prevent 304 from happening
-				xhr.setRequestHeader("If-Modified-Since", "");
-				xhr.setRequestHeader("If-None-Match", (Math.random() * Number.MAX_SAFE_INTEGER).toString(36));
-
-				xhr.send();
+			function deleteFile(filename) {
+				return new Promise(function(resolve, reject){
+					var xhr = new XMLHttpRequest();
+					xhr.addEventListener("load", function() {
+						var tabElem = document.querySelector("[data-file='" + currentFile + "']");
+						tabElem.remove();
+						if (filename == currentFile) {
+							currentFile = "";
+							loadFile("index.html");
+						}
+						resolve();
+					});
+					xhr.addEventListener("error", function() {
+						reject();
+					});
+					xhr.open("DELETE", "/files/" + location.hash.slice(1) + "/" + filename);
+					xhr.send();
+				});
 			}
 
 			function createTab(file) {
-				var tab = document.createElement("button");
+				var tab = document.createElement("div");
 				tab.classList.add("tab");
 				tab.setAttribute("data-file", file);
 				tab.innerText = file;
+
 				tab.addEventListener("click", function() {
 					loadFile(this.getAttribute("data-file"));
 				});
+
+				if (file != "index.html") {
+					var close = document.createElement("button");
+					close.innerHTML = "&times;";
+					close.classList.add("tab-close");
+					close.addEventListener("click", function() {
+						if (window.confirm("Delete '" + this.parentNode.getAttribute("data-file") + "'?")) {
+							deleteFile(this.parentNode.getAttribute("data-file"));
+						} 
+					});
+					tab.appendChild(close);
+				}
+
 				return tab;
 			}
 
@@ -97,31 +135,33 @@
 			function loadFiles() {
 				document.getElementById("download").href = "/download/" + location.hash.slice(1);
 
-				var xhr = new XMLHttpRequest();
-				xhr.addEventListener("load", function() {
-					var json = JSON.parse(xhr.responseText);
-					if(json.error) {
-						console.error(json.error);
-					}
-					new Promise(function(resolve, reject) {
-						if (json.files.indexOf("index.html") == -1) {
-							json.files.push("index.html");
-							saveFile("index.html", defaultFile).then(resolve, resolve);
-						} else {
-							resolve();
+				return new Promise(function(resolve, reject) {
+					var xhr = new XMLHttpRequest();
+					xhr.addEventListener("load", function() {
+						var json = JSON.parse(xhr.responseText);
+						if (json.error) {
+							location.hash = "#";
 						}
-					}).then(function() {
-						var tabsElem = document.getElementById("tabs");
-						tabsElem.innerHTML = "";
+						new Promise(function(resolve, reject) {
+							if (json.files.indexOf("index.html") == -1) {
+								json.files.push("index.html");
+								saveFile("index.html", defaultFile).then(resolve, resolve);
+							} else {
+								resolve();
+							}
+						}).then(function() {
+							var tabsElem = document.getElementById("tabs");
+							tabsElem.innerHTML = "";
 
-						for (var file of json.files) {
-							tabsElem.appendChild(createTab(file)); 
-						}
-						loadFile("index.html");
+							for (var file of json.files) {
+								tabsElem.appendChild(createTab(file)); 
+							}
+							loadFile("index.html").then(function() { resolve(); });
+						});
 					});
+					xhr.open("GET", "/project/" + location.hash.slice(1));
+					xhr.send();
 				});
-				xhr.open("GET", "/project/" + location.hash.slice(1));
-				xhr.send();
 			}
 
 			// Adds and truncates a file
@@ -132,19 +172,22 @@
 			}
 
 			window.addEventListener("hashchange", function() {
-				loadFiles();
+				if (location.hash.length <= 1) {
+					let xhr = new XMLHttpRequest();
+					xhr.addEventListener("load", function() {
+						location.hash = xhr.responseText;
+					});
+					xhr.open("POST", "/new");
+					xhr.send();
+				} else {
+					loadFiles().then(function() {
+						window.addEventListener("beforeunload", function() {
+							navigator.sendBeacon("/files/" + location.hash.slice(1) + "/" + currentFile, cm.getValue());
+						});
+					});
+				}
 			});
-
-			if (location.hash.length <= 1) {
-				let xhr = new XMLHttpRequest();
-				xhr.addEventListener("load", function() {
-					location.hash = xhr.responseText;
-				});
-				xhr.open("POST", "/new");
-				xhr.send();
-			} else {
-				loadFiles();
-			}
+			window.dispatchEvent(new Event("hashchange"));
 
 			function saveFile(filename, data) {
 				return new Promise(function(resolve, reject) {
@@ -167,7 +210,7 @@
 			});
 
 			document.getElementById("newfile").addEventListener("click", function() {
-				var filename = window.prompt("What's its filename?");
+				var filename = window.prompt("Name of file?");
 				if (!filename) {
 					return;
 				}
@@ -175,10 +218,6 @@
 				addFile(filename).then(function() {
 					loadFile(filename);
 				});
-			});
-
-			window.addEventListener("beforeunload", function() {
-				navigator.sendBeacon("/files/" + location.hash.slice(1) + "/" + currentFile, cm.getValue());
 			});
 		</script>
 	</body>
