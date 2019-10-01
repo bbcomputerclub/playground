@@ -109,8 +109,9 @@
 						if (json.files.indexOf("index.html") == -1) {
 							json.files.push("index.html");
 							saveFile("index.html", defaultFile).then(resolve, resolve);
+						} else {
+							resolve();
 						}
-						resolve();
 					}).then(function() {
 						var tabsElem = document.getElementById("tabs");
 						tabsElem.innerHTML = "";

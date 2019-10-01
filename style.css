@@ -8,9 +8,14 @@ body {
 	padding: 0; margin: 0;
 }
 
+::-moz-focus-inner {
+	border: 0;
+}
+
 .button {
 	background: #60A917;
 	display: inline-block;
+	outline: 0;
 
 	padding: 8px 16px;
 	border: 0;

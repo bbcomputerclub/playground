@@ -11,6 +11,14 @@ try {
 	fs.mkdirSync(path.join(__dirname, "downloads"));
 } catch(err) {}
 
+function createId() {
+	var id = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString(36);
+	if (fs.existsSync(id)) {
+		return createId();
+	}
+	return id;
+}
+
 const app = express();
 app.use(express.text({
 	type: "*/*"
@@ -23,7 +31,7 @@ app.get("/style.css", function(req, res) {
 	res.sendFile(path.join(__dirname, "style.css"));
 })
 app.post("/new", function(req, res) {
-	const id = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString(36);
+	const id = createId();
 	fs.mkdir(path.join(__dirname, "files", id), (err) => {
 		if (err != null) {
 			console.error(err);
