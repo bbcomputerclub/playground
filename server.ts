@@ -69,6 +69,16 @@ app.post("/files/:id/:file", function(req, res) {
 		}
 	});
 });
+app.delete("/files/:id/:file", function(req, res) {
+	fs.unlink(path.join(__dirname, "files", req.params.id, req.params.file), function(err) {
+		if (err) {
+			res.status(500).send(err);
+		} else {
+			res.sendStatus(200);
+		}
+	});
+});
+
 app.get("/download/:id", function(req, res) {
 	fs.readdir(path.join(__dirname, "files", req.params.id), function(err, files) {
 		if (err != null) {

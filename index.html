@@ -130,7 +130,7 @@
 			function addFile(filename) {
 				var tabsElem = document.getElementById("tabs");
 				tabsElem.appendChild(createTab(filename)); 
-				saveFile(filename, "");
+				return saveFile(filename, "");
 			}
 
 			window.addEventListener("hashchange", function() {
@@ -174,7 +174,9 @@
 					return;
 				}
 
-				addFile(filename);
+				addFile(filename).then(function() {
+					loadFile(filename);
+				});
 			});
 
 			window.addEventListener("beforeunload", function() {
